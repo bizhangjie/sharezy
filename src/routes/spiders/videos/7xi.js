@@ -36,39 +36,46 @@ const config = {
 qixiRouter.get("/7xi/search", async (ctx) => {
     const { kw, page } = ctx.query;
     const res = await axios.get(`${host}/vodsearch/page/${page}/wd/${kw}.html`)
-    const ul = res.data.match(/<ul class="hl-one-list([\s\S]+?)<\/ul/)[1]
-    const li = ul.match(/<li([\s\S]+?)<\/li>/g)
-    const total = res.data.match(/<div class="hl-page-total">(.+?)<\/div>/)[1].split('/&nbsp;')[1].replace('页','')
-    const bangumi = []
-    li.forEach(e => {
-        const title = e.match(/title="(.+?)"/)[1]
-        const id = e.match(/href="(.+?)"/)[1]
-        const poster = getCover(e.match(/data-original="(.+?)"/)[1])
-        const update = e.match(/<span class="hl-lc-1 remarks">(.+?)<\/span>/)[1]
-        const description = e.match(/class="hl-item-sub hl-text-muted hl-lc-2">(.+?)<\/p>/)[1]
-        const tagss = e.match(/<em>(.+?)<\/p>/)[1]
-        const tdata = tagss.replace('<em>', '').replace('</em>', '').split('&nbsp;·&nbsp;')
-        const tags = [];
-        tdata.forEach(item => {
-            if (item.includes('&nbsp;')) {
-                const parts = item.split('&nbsp;');
-                tags.push(...parts.filter(part => part.trim() !== '')); // 合并分割后的内容到数组
-            } else {
-                tags.push(item);
-            }
-        });
-        const releaseDate = tags[1]
-        bangumi.push({
-            title,
-            id,
-            poster,
-            update,
-            description,
-            tags,
-            releaseDate
-        })
-    })
-    response(ctx, 200, {data: bangumi, total: total}, routerInfo)
+    if (res.status == 200){
+        try {
+            const ul = res.data.match(/<ul class="hl-one-list([\s\S]+?)<\/ul/)[1]
+            const li = ul.match(/<li([\s\S]+?)<\/li>/g)
+            const total = res.data.match(/<div class="hl-page-total">(.+?)<\/div>/)[1].split('/&nbsp;')[1].replace('页','')
+            const bangumi = []
+            li.forEach(e => {
+                const title = e.match(/title="(.+?)"/)[1]
+                const id = e.match(/href="(.+?)"/)[1]
+                const poster = getCover(e.match(/data-original="(.+?)"/)[1])
+                const update = e.match(/<span class="hl-lc-1 remarks">(.+?)<\/span>/)[1]
+                const description = e.match(/class="hl-item-sub hl-text-muted hl-lc-2">(.+?)<\/p>/)[1]
+                const tagss = e.match(/<em>(.+?)<\/p>/)[1]
+                const tdata = tagss.replace('<em>', '').replace('</em>', '').split('&nbsp;·&nbsp;')
+                const tags = [];
+                tdata.forEach(item => {
+                    if (item.includes('&nbsp;')) {
+                        const parts = item.split('&nbsp;');
+                        tags.push(...parts.filter(part => part.trim() !== '')); // 合并分割后的内容到数组
+                    } else {
+                        tags.push(item);
+                    }
+                });
+                const releaseDate = tags[1]
+                bangumi.push({
+                    title,
+                    id,
+                    poster,
+                    update,
+                    description,
+                    tags,
+                    releaseDate
+                })
+            })
+            response(ctx, 200, {data: bangumi, total: total}, routerInfo)
+        }catch (err){
+            response(ctx, 200, {data: [], total: 0}, routerInfo)
+        }
+    }
+
 });
 
 // 热门内容
